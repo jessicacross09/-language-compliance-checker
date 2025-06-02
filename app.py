@@ -4,7 +4,8 @@ import re
 import pandas as pd
 from io import StringIO
 from docx import Document
-import fitz  # PyMuPDF for PDFs
+import fitz  # PyMuPDF
+from pptx import Presentation
 
 # --- Streamlit Config ---
 st.set_page_config(page_title="APEC-RISE Text Harmonization Tool", layout="wide")
@@ -55,6 +56,15 @@ def read_docx(file):
 def read_txt(file):
     return StringIO(file.getvalue().decode("utf-8")).read()
 
+def read_pptx(file):
+    prs = Presentation(file)
+    text_runs = []
+    for slide_num, slide in enumerate(prs.slides, start=1):
+        for shape in slide.shapes:
+            if hasattr(shape, "text"):
+                text_runs.append(f"[Slide {slide_num}] {shape.text}")
+    return "\n".join(text_runs)
+
 def scan_pdf(file, banned_dict):
     results = []
     doc = fitz.open(stream=file.read(), filetype="pdf")
@@ -89,7 +99,7 @@ def scan_text(text, banned_dict, chars_per_page=1800):
     return results
 
 # --- Upload and Process ---
-uploaded_file = st.file_uploader("📤 Upload a .pdf, .docx, or .txt file", type=["pdf", "docx", "txt"])
+uploaded_file = st.file_uploader("\ud83d\udcc4 Upload a .pdf, .docx, .txt, or .pptx file", type=["pdf", "docx", "txt", "pptx"])
 
 if uploaded_file:
     findings = []
@@ -103,6 +113,9 @@ if uploaded_file:
         elif uploaded_file.name.endswith(".txt"):
             text = read_txt(uploaded_file)
             findings = scan_text(text, banned_terms_dict)
+        elif uploaded_file.name.endswith(".pptx"):
+            text = read_pptx(uploaded_file)
+            findings = scan_text(text, banned_terms_dict)
         else:
             st.error("Unsupported file type.")
     except Exception as e:
@@ -110,7 +123,7 @@ if uploaded_file:
 
     # --- Display Results ---
     if findings:
-        st.markdown("### 📊 Summary Statistics")
+        st.markdown("### \ud83d\udcca Summary Statistics")
         df = pd.DataFrame(findings)
 
         term_counts = df["Banned Term"].value_counts().reset_index()
@@ -119,12 +132,12 @@ if uploaded_file:
         st.metric(label="Total Banned Terms Flagged", value=len(df))
         st.metric(label="Unique Terms Found", value=term_counts.shape[0])
 
-        with st.expander("📋 Term Frequency Table"):
+        with st.expander("\ud83d\udccb Term Frequency Table"):
             st.dataframe(term_counts, use_container_width=True)
 
-        st.markdown("### 📋 Flagged Terms Table")
+        st.markdown("### \ud83d\udccb Flagged Terms Table")
         st.dataframe(df, use_container_width=True)
         st.success(f"{len(df)} instance(s) of non-compliant language found.")
     else:
-        st.success("✅ No banned terms found in the uploaded document.")
+        st.success("\u2705 No banned terms found in the uploaded document.")
 
