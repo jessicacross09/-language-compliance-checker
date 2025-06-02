@@ -36,7 +36,6 @@ banned_terms_dict = {
     "gender-responsive": ["inclusive of gender perspectives"],
     "Gulf of Mexico": ["Gulf of America"],
     "Hanoi": ["Ha Noi"],
-    "Hong Kong": ["Hong Kong, China"],
     "inclusion": ["broad participation"],
     "inclusive": ["participatory"],
     "inclusive leadership": ["broad-based leadership"],
@@ -48,11 +47,8 @@ banned_terms_dict = {
     "nonbinary": ["gender-diverse"],
     "oppression": ["systemic challenges"],
     "oppressive": ["restrictive"],
-    "Philippines": ["The (or the) Philippines"],
     "social justice": ["equitable policy outcomes"],
-    "South Korea": ["Korea"],
     "Taiwan": ["Chinese Taipei"],
-    "United States": ["The (or the) United States"],
     "Vietnam": ["Viet Nam"],
     "vulnerable populations": ["underrepresented stakeholders"]
 }
