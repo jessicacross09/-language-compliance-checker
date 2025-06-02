@@ -41,7 +41,7 @@ banned_terms_dict = {
     "inclusive": ["participatory"],
     "inclusive leadership": ["broad-based leadership"],
     "inclusiveness": ["broad engagement"],
-    "inclusivity": ["collaborative approaches"]
+    "inclusivity": ["collaborative approaches"],
     "nation": ["economy"],
     "national": ["domestic"],
     "non-binary": ["gender-diverse"],
