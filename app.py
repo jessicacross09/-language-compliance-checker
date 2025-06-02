@@ -13,12 +13,37 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Customize banned terms
 banned_terms = [
+    "anti-racism",
+    "clean energy",
+    "climate change",
+    "climate crisis",
+    "climate science",
+    "disability",
+    "diverse",
+    "diverse backgrounds",
+    "diverse communities",
+    "diverse community",
+    "diverse group",
+    "diverse groups",
+    "diversified",
+    "diversify",
+    "diversifying",
     "diversity",
     "equity",
-    "inclusion",
-    "climate change",
+    "gender",
     "gender mainstreaming",
+    "Gulf of Mexico",
+    "inclusion",
+    "inclusive",
+    "inclusive leadership",
+    "inclusiveness",
+    "inclusivity",
+    "non-binary",
+    "nonbinary",
+    "oppression",
+    "oppressive:.
     "social justice"
+    "vulnerable populations"
 ]
 
 # Highlight terms and return both HTML + positions
