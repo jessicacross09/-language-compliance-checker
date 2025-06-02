@@ -2,14 +2,16 @@ import streamlit as st
 import openai
 import os
 import re
-from io import StringIO
+from io import BytesIO, StringIO
 from docx import Document
-import base64
+from docx.shared import RGBColor
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
 
-# Set API key from environment or Streamlit Cloud secret
+# API key from environment or Streamlit Cloud secret
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Customize banned terms here
+# Customize banned terms
 banned_terms = [
     "diversity",
     "equity",
@@ -19,23 +21,20 @@ banned_terms = [
     "social justice"
 ]
 
-# Highlight flagged terms
+# Highlight terms and return both HTML + positions
 def check_for_banned_terms(text, banned_terms):
     flagged = []
-    highlighted_text = text
+    pattern_map = []
 
     for term in banned_terms:
         if term.lower() in text.lower():
             flagged.append(term)
-            highlighted_text = re.sub(
-                fr"(?i)\b({re.escape(term)})\b",
-                r"<span style='background-color: yellow;'>\1</span>",
-                highlighted_text
-            )
+            matches = list(re.finditer(fr"(?i)\b({re.escape(term)})\b", text))
+            pattern_map.extend(matches)
 
-    return flagged, highlighted_text
+    return flagged, text, pattern_map
 
-# GPT-4 contextual review
+# GPT-4 review
 def analyze_with_gpt(text, banned_terms):
     prompt = f"""
 You are a compliance checker. Review the following text and flag any language that directly or indirectly relates to these restricted themes: {', '.join(banned_terms)}.
@@ -67,13 +66,40 @@ def read_txt(file):
     stringio = StringIO(file.getvalue().decode("utf-8"))
     return stringio.read()
 
-# Download HTML helper
-def create_download_link(html_content, filename="reviewed_output.html"):
-    b64 = base64.b64encode(html_content.encode()).decode()
-    href = f'<a href="data:text/html;base64,{b64}" download="{filename}">📥 Download Reviewed Version</a>'
-    return href
+# Create a Word file with highlighted banned terms
+def create_docx_with_highlights(text, pattern_map):
+    doc = Document()
+    para = doc.add_paragraph()
 
-# App layout
+    last_index = 0
+    for match in sorted(pattern_map, key=lambda m: m.start()):
+        start, end = match.start(), match.end()
+
+        if start > last_index:
+            para.add_run(text[last_index:start])
+
+        run = para.add_run(text[start:end])
+        highlight_run(run)
+
+        last_index = end
+
+    if last_index < len(text):
+        para.add_run(text[last_index:])
+
+    # Save to BytesIO
+    buffer = BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    return buffer
+
+# Apply yellow highlight to a run
+def highlight_run(run):
+    highlight = OxmlElement("w:highlight")
+    highlight.set(qn("w:val"), "yellow")
+    rPr = run._element.get_or_add_rPr()
+    rPr.append(highlight)
+
+# Streamlit UI
 st.set_page_config(page_title="Language Compliance Checker")
 st.title("🕵️ Language Compliance Checker")
 st.markdown("Upload a `.docx` or `.txt` file to scan for banned terms and receive a GPT-4 review.")
@@ -90,20 +116,25 @@ if uploaded_file:
         sample_text = ""
 
     if sample_text.strip():
-        flagged_terms, highlighted = check_for_banned_terms(sample_text, banned_terms)
+        flagged_terms, full_text, pattern_map = check_for_banned_terms(sample_text, banned_terms)
 
         if flagged_terms:
             st.error(f"🚫 Flagged terms: {', '.join(flagged_terms)}")
-            st.markdown("### ✏️ Text with Highlighted Issues:")
-            st.markdown(highlighted, unsafe_allow_html=True)
+            st.markdown("### ✏️ Preview (not highlighted in browser):")
+            st.text(full_text[:1000] + ("..." if len(full_text) > 1000 else ""))
 
-            # Add download button
-            download_link = create_download_link(f"<html><body>{highlighted}</body></html>")
-            st.markdown(download_link, unsafe_allow_html=True)
+            # Word download
+            buffer = create_docx_with_highlights(full_text, pattern_map)
+            st.download_button(
+                label="📥 Download Reviewed Word File",
+                data=buffer,
+                file_name="reviewed_text.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
         else:
             st.success("✅ No direct banned terms found.")
             st.markdown("### ✏️ Your Original Text:")
-            st.markdown(sample_text)
+            st.text(sample_text)
 
         st.subheader("🧠 GPT-4 Contextual Review")
         with st.spinner("Analyzing with GPT-4..."):
