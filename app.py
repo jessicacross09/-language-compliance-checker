@@ -4,21 +4,20 @@ import re
 import pandas as pd
 from io import StringIO
 from docx import Document
-import fitz  # PyMuPDF for PDF support
+import fitz  # PyMuPDF
 
-# --- Streamlit Page Config ---
+# --- Streamlit Config ---
 st.set_page_config(page_title="APEC-RISE Text Harmonization Tool", layout="wide")
 st.title("🕵️ APEC-RISE Text Harmonization Tool")
 st.markdown("Upload a document to identify non-compliant language and receive suggested alternatives.")
 
-# --- Banned Terms with Replacements ---
+# --- Banned Terms Dictionary ---
 banned_terms_dict = {
     "anti-racism": ["addressing discrimination"],
     "clean energy": ["energy diversification"],
     "climate change": ["environmental shifts"],
     "climate crisis": ["environmental challenges"],
     "climate science": ["environmental data"],
-    "country": ["economy"],
     "disability": ["persons with disabilities"],
     "diverse": ["varied"],
     "diverse backgrounds": ["varied experiences"],
@@ -34,22 +33,17 @@ banned_terms_dict = {
     "gender": ["demographics"],
     "gender mainstreaming": ["gender considerations"],
     "gender-responsive": ["inclusive of gender perspectives"],
-    "Gulf of Mexico": ["Gulf of America"],
-    "Hanoi": ["Ha Noi"],
+    "Gulf of Mexico": ["regionally specific area"],
     "inclusion": ["broad participation"],
     "inclusive": ["participatory"],
     "inclusive leadership": ["broad-based leadership"],
     "inclusiveness": ["broad engagement"],
     "inclusivity": ["collaborative approaches"],
-    "nation": ["economy"],
-    "national": ["domestic"],
     "non-binary": ["gender-diverse"],
     "nonbinary": ["gender-diverse"],
     "oppression": ["systemic challenges"],
     "oppressive": ["restrictive"],
     "social justice": ["equitable policy outcomes"],
-    "Taiwan": ["Chinese Taipei"],
-    "Vietnam": ["Viet Nam"],
     "vulnerable populations": ["underrepresented stakeholders"]
 }
 
@@ -64,7 +58,6 @@ def read_txt(file):
 def scan_pdf(file, banned_dict):
     results = []
     doc = fitz.open(stream=file.read(), filetype="pdf")
-
     for page_number, page in enumerate(doc, start=1):
         text = page.get_text()
         for term, suggestions in banned_dict.items():
@@ -114,8 +107,22 @@ if uploaded_file:
 
     # --- Display Results ---
     if findings:
-        st.markdown("### 📋 Flagged Terms Table")
+        st.markdown("### 📊 Summary Statistics")
         df = pd.DataFrame(findings)
+
+        term_counts = df["Banned Term"].value_counts().reset_index()
+        term_counts.columns = ["Term", "Frequency"]
+
+        st.metric(label="Total Banned Terms Flagged", value=len(df))
+        st.metric(label="Unique Terms Found", value=term_counts.shape[0])
+
+        with st.expander("📋 Term Frequency Table"):
+            st.dataframe(term_counts, use_container_width=True)
+
+        with st.expander("📈 Bar Chart of Most Frequent Terms"):
+            st.bar_chart(term_counts.set_index("Term"))
+
+        st.markdown("### 📋 Flagged Terms Table")
         st.dataframe(df, use_container_width=True)
         st.success(f"{len(df)} instance(s) of non-compliant language found.")
     else:
