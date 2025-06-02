@@ -4,6 +4,7 @@ import re
 import pandas as pd
 from io import StringIO
 from docx import Document
+import fitz  # PyMuPDF for PDFs
 
 # --- Streamlit UI Configuration ---
 st.set_page_config(page_title="APEC-RISE Text Harmonization Tool", layout="wide")
@@ -54,6 +55,13 @@ def read_docx(file):
 def read_txt(file):
     return StringIO(file.getvalue().decode("utf-8")).read()
 
+def read_pdf(file):
+    doc = fitz.open(stream=file.read(), filetype="pdf")
+    text = ""
+    for page in doc:
+        text += page.get_text()
+    return text
+
 # --- Text scan function ---
 def scan_text_for_banned_terms(text, banned_dict):
     results = []
@@ -71,22 +79,28 @@ def scan_text_for_banned_terms(text, banned_dict):
     return results
 
 # --- File upload ---
-uploaded_file = st.file_uploader("📤 Upload a .docx or .txt file", type=["docx", "txt"])
+uploaded_file = st.file_uploader("📤 Upload a .docx, .txt, or .pdf file", type=["docx", "txt", "pdf"])
 
 if uploaded_file:
     # Read the uploaded file
-    if uploaded_file.name.endswith(".docx"):
-        full_text = read_docx(uploaded_file)
-    elif uploaded_file.name.endswith(".txt"):
-        full_text = read_txt(uploaded_file)
-    else:
-        st.error("Unsupported file type.")
-        full_text = ""
+    file_text = ""
+    try:
+        if uploaded_file.name.endswith(".docx"):
+            file_text = read_docx(uploaded_file)
+        elif uploaded_file.name.endswith(".txt"):
+            file_text = read_txt(uploaded_file)
+        elif uploaded_file.name.endswith(".pdf"):
+            file_text = read_pdf(uploaded_file)
+        else:
+            st.error("Unsupported file type.")
+    except Exception as e:
+        st.error(f"Error reading file: {e}")
+        file_text = ""
 
-    if full_text.strip():
+    if file_text.strip():
         # Scan and display results
         st.markdown("### 📋 Flagged Terms Table")
-        findings = scan_text_for_banned_terms(full_text, banned_terms_dict)
+        findings = scan_text_for_banned_terms(file_text, banned_terms_dict)
 
         if findings:
             df = pd.DataFrame(findings)
@@ -95,4 +109,4 @@ if uploaded_file:
         else:
             st.success("✅ No banned terms found in the document.")
     else:
-        st.warning("The uploaded file appears to be empty.")
+        st.warning("The uploaded file appears to be empty or unreadable.")
