@@ -1,15 +1,16 @@
 import streamlit as st
-import openai
 import os
 import re
 import pandas as pd
 from io import StringIO
 from docx import Document
 
-# Set up OpenAI key from environment or Streamlit secrets
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# --- Streamlit UI Configuration ---
+st.set_page_config(page_title="APEC-RISE Text Harmonization Tool", layout="wide")
+st.title("🕵️ APEC-RISE Text Harmonization Tool")
+st.markdown("Upload a document to identify non-compliant language and get suggested alternatives.")
 
-# Banned terms and suggested replacements
+# --- Define banned terms and their suggested replacements ---
 banned_terms_dict = {
     "anti-racism": ["addressing discrimination"],
     "clean energy": ["energy diversification"],
@@ -45,89 +46,53 @@ banned_terms_dict = {
     "vulnerable populations": ["underrepresented stakeholders"]
 }
 
-# Check text for banned terms and extract context
-def check_for_banned_terms(text, banned_terms_dict):
-    findings = []
-    for term, suggestions in banned_terms_dict.items():
-        for match in re.finditer(fr"(?i)\b({re.escape(term)})\b", text):
-            start = match.start()
-            end = match.end()
-            snippet = text[max(0, start - 30): min(len(text), end + 30)].replace('\n', ' ')
-            findings.append({
-                "Term": match.group(),
-                "Start Index": start,
-                "End Index": end,
-                "Context": f"...{snippet.strip()}...",
-                "Suggested Replacement": ", ".join(suggestions)
-            })
-    return findings
-
-# GPT-4 review
-def analyze_with_gpt(text, banned_terms_dict):
-    banned_list = ", ".join(banned_terms_dict.keys())
-    prompt = f"""
-You are a compliance checker. Review the following text and flag any language that directly or indirectly relates to these restricted themes: {banned_list}.
-
-Flag explicit terms as well as paraphrased or implied references. Provide a short reason for each issue.
-
-Text:
-{text}
-
-Return a bullet list of all flagged issues.
-"""
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0
-        )
-        return response['choices'][0]['message']['content']
-    except Exception as e:
-        return f"⚠️ GPT-4 error: {e}"
-
-# Read DOCX
+# --- Helpers to read files ---
 def read_docx(file):
     doc = Document(file)
     return "\n".join([para.text for para in doc.paragraphs])
 
-# Read TXT
 def read_txt(file):
-    stringio = StringIO(file.getvalue().decode("utf-8"))
-    return stringio.read()
+    return StringIO(file.getvalue().decode("utf-8")).read()
 
-# Streamlit UI
-st.set_page_config(page_title="APEC-RISE Text Harmonization Tool")
-st.title("🕵️ APEC-RISE Text Harmonization Tool")
-st.markdown("Check uploaded text for non-compliant language and suggest alternative phrasing.")
+# --- Text scan function ---
+def scan_text_for_banned_terms(text, banned_dict):
+    results = []
+    for term, suggestions in banned_dict.items():
+        pattern = re.compile(rf"\b({re.escape(term)})\b", re.IGNORECASE)
+        for match in pattern.finditer(text):
+            start = match.start()
+            snippet = text[max(0, start - 40): min(len(text), start + 60)].replace('\n', ' ')
+            results.append({
+                "Banned Term": match.group(),
+                "Location (Character Index)": start,
+                "Context": f"...{snippet.strip()}...",
+                "Suggested Replacement(s)": ", ".join(suggestions)
+            })
+    return results
 
+# --- File upload ---
 uploaded_file = st.file_uploader("📤 Upload a .docx or .txt file", type=["docx", "txt"])
 
 if uploaded_file:
+    # Read the uploaded file
     if uploaded_file.name.endswith(".docx"):
-        sample_text = read_docx(uploaded_file)
+        full_text = read_docx(uploaded_file)
     elif uploaded_file.name.endswith(".txt"):
-        sample_text = read_txt(uploaded_file)
+        full_text = read_txt(uploaded_file)
     else:
         st.error("Unsupported file type.")
-        sample_text = ""
+        full_text = ""
 
-    if sample_text.strip():
-        findings = check_for_banned_terms(sample_text, banned_terms_dict)
+    if full_text.strip():
+        # Scan and display results
+        st.markdown("### 📋 Flagged Terms Table")
+        findings = scan_text_for_banned_terms(full_text, banned_terms_dict)
 
         if findings:
-            st.error("🚫 Banned terms found in document.")
-            st.markdown("### 📋 Flagged Terms Table")
-
             df = pd.DataFrame(findings)
             st.dataframe(df, use_container_width=True)
+            st.success(f"{len(df)} instance(s) of non-compliant language found.")
         else:
-            st.success("✅ No banned terms found.")
-            st.markdown("### ✏️ Original Text")
-            st.text(sample_text)
-
-        st.subheader("🧠 GPT-4 Contextual Review")
-        with st.spinner("Running GPT-4 review..."):
-            gpt_output = analyze_with_gpt(sample_text, banned_terms_dict)
-            st.write(gpt_output)
+            st.success("✅ No banned terms found in the document.")
     else:
-        st.warning("The uploaded file is empty.")
+        st.warning("The uploaded file appears to be empty.")
