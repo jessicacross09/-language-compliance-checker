@@ -41,8 +41,8 @@ banned_terms = [
     "non-binary",
     "nonbinary",
     "oppression",
-    "oppressive:.
-    "social justice"
+    "oppressive",
+    "social justice",
     "vulnerable populations"
 ]
 
