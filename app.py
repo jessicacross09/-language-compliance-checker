@@ -5,6 +5,8 @@ import pandas as pd
 from io import StringIO
 from docx import Document
 import fitz  # PyMuPDF
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
 
 # --- Streamlit Config ---
 st.set_page_config(page_title="APEC-RISE Text Harmonization Tool", layout="wide")
@@ -18,7 +20,6 @@ banned_terms_dict = {
     "climate change": ["environmental shifts"],
     "climate crisis": ["environmental challenges"],
     "climate science": ["environmental data"],
-    "DEIA": ["broad-based engagement"],
     "disability": ["persons with disabilities"],
     "diverse": ["varied"],
     "diverse backgrounds": ["varied experiences"],
@@ -86,6 +87,14 @@ def scan_text(text, banned_dict):
             })
     return results
 
+def generate_wordcloud(frequencies):
+    wc = WordCloud(width=800, height=300, background_color="white")
+    wc.generate_from_frequencies(frequencies)
+    fig, ax = plt.subplots(figsize=(10, 4))
+    ax.imshow(wc, interpolation='bilinear')
+    ax.axis("off")
+    st.pyplot(fig)
+
 # --- Upload and Process ---
 uploaded_file = st.file_uploader("📤 Upload a .pdf, .docx, or .txt file", type=["pdf", "docx", "txt"])
 
@@ -120,8 +129,9 @@ if uploaded_file:
         with st.expander("📋 Term Frequency Table"):
             st.dataframe(term_counts, use_container_width=True)
 
-        with st.expander("📈 Bar Chart of Most Frequent Terms"):
-            st.bar_chart(term_counts.set_index("Term"))
+        with st.expander("☁️ Word Cloud of Most Frequent Terms"):
+            freq_dict = dict(zip(term_counts["Term"], term_counts["Frequency"]))
+            generate_wordcloud(freq_dict)
 
         st.markdown("### 📋 Flagged Terms Table")
         st.dataframe(df, use_container_width=True)
