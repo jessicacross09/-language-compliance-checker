@@ -126,9 +126,9 @@ def highlight_run(run):
     rPr.append(highlight)
 
 # Streamlit UI
-st.set_page_config(page_title="APEC-RISE Language Validator")
-st.title("🕵️ Language Compliance Checker")
-st.markdown("Upload a `.docx` or `.txt` file to scan for banned terms and receive a GPT-4 review.")
+st.set_page_config(page_title="APEC-RISE Text Harmonization Tool")
+st.title("🕵️ APEC-RISE Text Harmonization Tool")
+st.markdown("Check text for non-compliant language and suggest improvements.")
 
 uploaded_file = st.file_uploader("📤 Upload a file", type=["docx", "txt"])
 
