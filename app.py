@@ -32,6 +32,7 @@ banned_terms = [
     "equity",
     "gender",
     "gender mainstreaming",
+    "gender-responsive",
     "Gulf of Mexico",
     "inclusion",
     "inclusive",
