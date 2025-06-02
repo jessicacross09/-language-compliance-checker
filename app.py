@@ -4,14 +4,14 @@ import re
 import pandas as pd
 from io import StringIO
 from docx import Document
-import fitz  # PyMuPDF for PDFs
+import fitz  # PyMuPDF for PDF support
 
-# --- Streamlit UI Configuration ---
+# --- Streamlit Page Config ---
 st.set_page_config(page_title="APEC-RISE Text Harmonization Tool", layout="wide")
 st.title("🕵️ APEC-RISE Text Harmonization Tool")
-st.markdown("Upload a document to identify non-compliant language and get suggested alternatives.")
+st.markdown("Upload a document to identify non-compliant language and receive suggested alternatives.")
 
-# --- Define banned terms and their suggested replacements ---
+# --- Banned Terms with Replacements ---
 banned_terms_dict = {
     "anti-racism": ["addressing discrimination"],
     "clean energy": ["energy diversification"],
@@ -47,7 +47,7 @@ banned_terms_dict = {
     "vulnerable populations": ["underrepresented stakeholders"]
 }
 
-# --- Helpers to read files ---
+# --- File Readers ---
 def read_docx(file):
     doc = Document(file)
     return "\n".join([para.text for para in doc.paragraphs])
@@ -55,58 +55,62 @@ def read_docx(file):
 def read_txt(file):
     return StringIO(file.getvalue().decode("utf-8")).read()
 
-def read_pdf(file):
+def scan_pdf(file, banned_dict):
+    results = []
     doc = fitz.open(stream=file.read(), filetype="pdf")
-    text = ""
-    for page in doc:
-        text += page.get_text()
-    return text
 
-# --- Text scan function ---
-def scan_text_for_banned_terms(text, banned_dict):
+    for page_number, page in enumerate(doc, start=1):
+        text = page.get_text()
+        for term, suggestions in banned_dict.items():
+            pattern = re.compile(rf"\b({re.escape(term)})\b", re.IGNORECASE)
+            for match in pattern.finditer(text):
+                snippet = text[max(0, match.start() - 40): min(len(text), match.end() + 60)].replace('\n', ' ')
+                results.append({
+                    "Banned Term": match.group(),
+                    "Page": page_number,
+                    "Context": f"...{snippet.strip()}...",
+                    "Suggested Replacement(s)": ", ".join(suggestions)
+                })
+    return results
+
+def scan_text(text, banned_dict):
     results = []
     for term, suggestions in banned_dict.items():
         pattern = re.compile(rf"\b({re.escape(term)})\b", re.IGNORECASE)
         for match in pattern.finditer(text):
-            start = match.start()
-            snippet = text[max(0, start - 40): min(len(text), start + 60)].replace('\n', ' ')
+            snippet = text[max(0, match.start() - 40): min(len(text), match.end() + 60)].replace('\n', ' ')
             results.append({
                 "Banned Term": match.group(),
-                "Location (Character Index)": start,
                 "Context": f"...{snippet.strip()}...",
                 "Suggested Replacement(s)": ", ".join(suggestions)
             })
     return results
 
-# --- File upload ---
-uploaded_file = st.file_uploader("📤 Upload a .docx, .txt, or .pdf file", type=["docx", "txt", "pdf"])
+# --- Upload and Process ---
+uploaded_file = st.file_uploader("📤 Upload a .pdf, .docx, or .txt file", type=["pdf", "docx", "txt"])
 
 if uploaded_file:
-    # Read the uploaded file
-    file_text = ""
+    findings = []
+
     try:
-        if uploaded_file.name.endswith(".docx"):
-            file_text = read_docx(uploaded_file)
+        if uploaded_file.name.endswith(".pdf"):
+            findings = scan_pdf(uploaded_file, banned_terms_dict)
+        elif uploaded_file.name.endswith(".docx"):
+            text = read_docx(uploaded_file)
+            findings = scan_text(text, banned_terms_dict)
         elif uploaded_file.name.endswith(".txt"):
-            file_text = read_txt(uploaded_file)
-        elif uploaded_file.name.endswith(".pdf"):
-            file_text = read_pdf(uploaded_file)
+            text = read_txt(uploaded_file)
+            findings = scan_text(text, banned_terms_dict)
         else:
             st.error("Unsupported file type.")
     except Exception as e:
         st.error(f"Error reading file: {e}")
-        file_text = ""
 
-    if file_text.strip():
-        # Scan and display results
+    # --- Display Results ---
+    if findings:
         st.markdown("### 📋 Flagged Terms Table")
-        findings = scan_text_for_banned_terms(file_text, banned_terms_dict)
-
-        if findings:
-            df = pd.DataFrame(findings)
-            st.dataframe(df, use_container_width=True)
-            st.success(f"{len(df)} instance(s) of non-compliant language found.")
-        else:
-            st.success("✅ No banned terms found in the document.")
+        df = pd.DataFrame(findings)
+        st.dataframe(df, use_container_width=True)
+        st.success(f"{len(df)} instance(s) of non-compliant language found.")
     else:
-        st.warning("The uploaded file appears to be empty or unreadable.")
+        st.success("✅ No banned terms found in the uploaded document.")
