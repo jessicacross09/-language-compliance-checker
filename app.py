@@ -4,9 +4,7 @@ import re
 import pandas as pd
 from io import StringIO
 from docx import Document
-import fitz  # PyMuPDF
-from wordcloud import WordCloud
-import matplotlib.pyplot as plt
+import fitz  # PyMuPDF for PDFs
 
 # --- Streamlit Config ---
 st.set_page_config(page_title="APEC-RISE Text Harmonization Tool", layout="wide")
@@ -74,26 +72,21 @@ def scan_pdf(file, banned_dict):
                 })
     return results
 
-def scan_text(text, banned_dict):
+def scan_text(text, banned_dict, chars_per_page=1800):
     results = []
     for term, suggestions in banned_dict.items():
         pattern = re.compile(rf"\b({re.escape(term)})\b", re.IGNORECASE)
         for match in pattern.finditer(text):
-            snippet = text[max(0, match.start() - 40): min(len(text), match.end() + 60)].replace('\n', ' ')
+            start = match.start()
+            estimated_page = max(1, (start // chars_per_page) + 1)
+            snippet = text[max(0, start - 40): min(len(text), start + 60)].replace('\n', ' ')
             results.append({
                 "Banned Term": match.group(),
+                "Page": estimated_page,
                 "Context": f"...{snippet.strip()}...",
                 "Suggested Replacement(s)": ", ".join(suggestions)
             })
     return results
-
-def generate_wordcloud(frequencies):
-    wc = WordCloud(width=800, height=300, background_color="white")
-    wc.generate_from_frequencies(frequencies)
-    fig, ax = plt.subplots(figsize=(10, 4))
-    ax.imshow(wc, interpolation='bilinear')
-    ax.axis("off")
-    st.pyplot(fig)
 
 # --- Upload and Process ---
 uploaded_file = st.file_uploader("📤 Upload a .pdf, .docx, or .txt file", type=["pdf", "docx", "txt"])
@@ -129,12 +122,9 @@ if uploaded_file:
         with st.expander("📋 Term Frequency Table"):
             st.dataframe(term_counts, use_container_width=True)
 
-        with st.expander("☁️ Word Cloud of Most Frequent Terms"):
-            freq_dict = dict(zip(term_counts["Term"], term_counts["Frequency"]))
-            generate_wordcloud(freq_dict)
-
         st.markdown("### 📋 Flagged Terms Table")
         st.dataframe(df, use_container_width=True)
         st.success(f"{len(df)} instance(s) of non-compliant language found.")
     else:
         st.success("✅ No banned terms found in the uploaded document.")
+
