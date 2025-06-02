@@ -18,6 +18,7 @@ banned_terms_dict = {
     "climate change": ["environmental shifts"],
     "climate crisis": ["environmental challenges"],
     "climate science": ["environmental data"],
+    "DEIA": ["broad-based engagement"],
     "disability": ["persons with disabilities"],
     "diverse": ["varied"],
     "diverse backgrounds": ["varied experiences"],
