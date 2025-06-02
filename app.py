@@ -9,7 +9,7 @@ from pptx import Presentation
 
 # --- Streamlit Config ---
 st.set_page_config(page_title="APEC-RISE Text Harmonization Tool", layout="wide")
-st.title("🕵️ APEC-RISE Text Harmonization Tool")
+st.title("APEC-RISE Text Harmonization Tool")
 st.markdown("Upload a document to identify non-compliant language and receive suggested alternatives.")
 
 # --- Banned Terms Dictionary ---
@@ -99,7 +99,7 @@ def scan_text(text, banned_dict, chars_per_page=1800):
     return results
 
 # --- Upload and Process ---
-uploaded_file = st.file_uploader("\ud83d\udcc4 Upload a .pdf, .docx, .txt, or .pptx file", type=["pdf", "docx", "txt", "pptx"])
+uploaded_file = st.file_uploader("Upload a .pdf, .docx, .txt, or .pptx file", type=["pdf", "docx", "txt", "pptx"])
 
 if uploaded_file:
     findings = []
@@ -123,7 +123,7 @@ if uploaded_file:
 
     # --- Display Results ---
     if findings:
-        st.markdown("### \ud83d\udcca Summary Statistics")
+        st.markdown("### Summary Statistics")
         df = pd.DataFrame(findings)
 
         term_counts = df["Banned Term"].value_counts().reset_index()
@@ -132,12 +132,12 @@ if uploaded_file:
         st.metric(label="Total Banned Terms Flagged", value=len(df))
         st.metric(label="Unique Terms Found", value=term_counts.shape[0])
 
-        with st.expander("\ud83d\udccb Term Frequency Table"):
+        with st.expander("Term Frequency Table"):
             st.dataframe(term_counts, use_container_width=True)
 
-        st.markdown("### \ud83d\udccb Flagged Terms Table")
+        st.markdown("### Flagged Terms Table")
         st.dataframe(df, use_container_width=True)
         st.success(f"{len(df)} instance(s) of non-compliant language found.")
     else:
-        st.success("\u2705 No banned terms found in the uploaded document.")
+        st.success("No banned terms found in the uploaded document.")
 
