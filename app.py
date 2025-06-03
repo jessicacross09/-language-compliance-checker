@@ -166,7 +166,7 @@ def read_pptx(file):
     return "\n".join(text_runs)
 
 # --- Streamlit Tabs ---
-tab1, tab2 = st.tabs(["\ud83d\udcc4 Upload Document", "\ud83d\udcd8 View Banned Terms"])
+tab1, tab2 = st.tabs(["Upload Document", "View Banned Terms"])
 
 with tab1:
     col1, col2 = st.columns([2, 1])
