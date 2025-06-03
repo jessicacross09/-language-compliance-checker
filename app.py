@@ -22,6 +22,7 @@ banned_terms_dict = {
     "climate change": ["environmental shifts"],
     "climate crisis": ["environmental challenges"],
     "climate science": ["environmental data"],
+    "country": ["economy"],
     "disability": ["persons with disabilities"],
     "diverse": ["varied"],
     "diverse backgrounds": ["varied experiences"],
@@ -43,11 +44,13 @@ banned_terms_dict = {
     "inclusive leadership": ["broad-based leadership"],
     "inclusiveness": ["broad engagement"],
     "inclusivity": ["collaborative approaches"],
+    "national": ["domestic"],
     "non-binary": ["gender-diverse"],
     "nonbinary": ["gender-diverse"],
     "oppression": ["systemic challenges"],
     "oppressive": ["restrictive"],
     "social justice": ["equitable policy outcomes"],
+    "Taiwan": ["Chinese Taipei"],
     "vulnerable populations": ["underrepresented stakeholders"]
 }
 
