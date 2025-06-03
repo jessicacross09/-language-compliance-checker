@@ -10,8 +10,12 @@ import spacy
 import openai
 
 # --- Load spaCy model and ensure it's available in Streamlit Cloud ---
-os.system("python -m spacy download en_core_web_sm")
+from spacy.cli import download
+download("en_core_web_sm")
+
+import spacy
 nlp = spacy.load("en_core_web_sm")
+
 
 # --- Set your OpenAI API key securely ---
 openai.api_key = os.getenv("OPENAI_API_KEY")  # Set this in Streamlit Cloud settings or locally
