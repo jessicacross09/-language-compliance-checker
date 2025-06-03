@@ -201,3 +201,5 @@ with tab1:
         for term, suggestions in banned_terms_dict.items()
     ])
     st.dataframe(banned_df, use_container_width=True)
+
+
