@@ -38,7 +38,7 @@ banned_terms_dict = {
     "gender": ["demographics"],
     "gender mainstreaming": ["gender considerations"],
     "gender-responsive": ["inclusive of gender perspectives"],
-    "Gulf of Mexico": ["regionally specific area"],
+    "Gulf of Mexico": ["Gulf of America"],
     "inclusion": ["broad participation"],
     "inclusive": ["participatory"],
     "inclusive leadership": ["broad-based leadership"],
