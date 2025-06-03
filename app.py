@@ -70,7 +70,7 @@ banned_terms_dict = {
 def is_named_entity(snippet: str, term: str):
     doc = nlp(snippet)
     for ent in doc.ents:
-        if term.lower() in ent.text.lower():
+        if term.lower() in ent.text.lower() and ent.label_ == "ORG":
             return True
     return False
 
@@ -168,7 +168,7 @@ with tab1:
                 st.markdown(f"<div style='white-space: pre-wrap'>{raw_text}</div>", unsafe_allow_html=True)
 
         if skipped:
-            st.markdown("### Skipped Terms (Named Entities)")
+            st.markdown("### Skipped Terms (Named Entities in Organization Names)")
             st.dataframe(pd.DataFrame(skipped), use_container_width=True)
 
 with tab2:
@@ -178,6 +178,3 @@ with tab2:
         for term, suggestions in banned_terms_dict.items()
     ])
     st.dataframe(banned_df, use_container_width=True)
-
-
-
