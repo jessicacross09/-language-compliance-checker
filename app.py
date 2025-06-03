@@ -18,7 +18,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")  # safer
 # --- Banned Terms Dictionary ---
 banned_terms_dict = {
     "accessible": ["reachable; usable; broadly available"],
-    "activism": ["Stakeholder engagement; issue-focused participation"],
+    "activism": ["stakeholder engagement; issue-focused participation"],
     "anti-racism": ["addressing discrimination"],
     "bias": ["subjective influence"],
     "clean energy": ["energy diversification; secure energy sourcing"],
