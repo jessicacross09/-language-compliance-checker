@@ -9,16 +9,25 @@ from pptx import Presentation
 import spacy
 import openai
 
-# Load spaCy model
+# --- Load spaCy model and ensure it's available in Streamlit Cloud ---
+os.system("python -m spacy download en_core_web_sm")
 nlp = spacy.load("en_core_web_sm")
 
-# Set your OpenAI API key (for development, replace with your key or use environment variable)
-openai.api_key = os.getenv("OPENAI_API_KEY")  # safer
+# --- Set your OpenAI API key securely ---
+openai.api_key = os.getenv("OPENAI_API_KEY")  # Set this in Streamlit Cloud settings or locally
+
+# --- Streamlit Config ---
+st.set_page_config(page_title="APEC-RISE Text Harmonization Tool", layout="wide")
+
+st.markdown("## 📝 APEC-RISE Text Harmonization Tool")
+st.markdown("""
+This tool scans uploaded documents for non-compliant language and provides recommended alternatives aligned with APEC-RISE communication guidance.
+""")
 
 # --- Banned Terms Dictionary ---
 banned_terms_dict = {
     "accessible": ["reachable; usable; broadly available"],
-    "activism": ["stakeholder engagement; issue-focused participation"],
+    "activism": ["Stakeholder engagement; issue-focused participation"],
     "anti-racism": ["addressing discrimination"],
     "bias": ["subjective influence"],
     "clean energy": ["energy diversification; secure energy sourcing"],
