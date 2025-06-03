@@ -39,7 +39,7 @@ banned_terms_dict = {
     "diversify": ["broaden"],
     "diversifying": ["expanding"],
     "diversity": ["variety"],
-    "equal opportunity": ["nerit-based opportunity; fair process"],
+    "equal opportunity": ["merit-based opportunity; fair process"],
     "equity": ["fair access"],
     "gender": ["demographics"],
     "gender mainstreaming": ["gender considerations"],
@@ -63,6 +63,79 @@ banned_terms_dict = {
     "vulnerable populations": ["underrepresented stakeholders"]
 }
 
+# --- Context-Aware Exception Lists ---
+ALLOWED_CONTEXTS_NATIONAL = [
+    "national university", "national institute", "national agency", "national bureau",
+    "national laboratory", "national center", "national academy", "national school",
+    "national authority", "national service", "national college", "national research",
+    "national science", "national statistics"
+]
+
+ALLOWED_CONTEXTS_TAIWAN = [
+    "national taiwan university", "taiwan tech", "taiwan normal university",
+    "taiwan external trade", "taiwan semiconductor", "taiwan trade center",
+    "taiwanese american foundation", "taiwanese chamber", "taiwan forestry",
+    "taiwan sugar", "taiwan cement", "taiwan cooperative", "taiwan tourism",
+    "taiwan international ports", "taiwan railways", "taiwan high speed rail"
+]
+
+def is_exception_context(snippet, term):
+    snippet = snippet.lower()
+    if term.lower() == "national":
+        return any(ctx in snippet for ctx in ALLOWED_CONTEXTS_NATIONAL)
+    elif term.lower() == "taiwan":
+        return any(ctx in snippet for ctx in ALLOWED_CONTEXTS_TAIWAN)
+    return False
+
+def scan_text_with_context(text, banned_dict, chars_per_page=1800):
+    results = []
+    skipped = []
+    for term, suggestions in banned_dict.items():
+        pattern = re.compile(rf"\b({re.escape(term)})\b", re.IGNORECASE)
+        for match in pattern.finditer(text):
+            start = match.start()
+            estimated_page = max(1, (start // chars_per_page) + 1)
+            snippet = text[max(0, start - 40): min(len(text), start + 60)].replace('\n', ' ')
+            if is_exception_context(snippet, term):
+                skipped.append({
+                    "Skipped Term": match.group(),
+                    "Page": estimated_page,
+                    "Context": f"...{snippet.strip()}..."
+                })
+                continue
+            results.append({
+                "Banned Term": match.group(),
+                "Page": estimated_page,
+                "Context": f"...{snippet.strip()}...",
+                "Suggested Replacement(s)": ", ".join(suggestions)
+            })
+    return results, skipped
+
+def scan_pdf_with_context(file, banned_dict):
+    results = []
+    skipped = []
+    doc = fitz.open(stream=file.read(), filetype="pdf")
+    for page_number, page in enumerate(doc, start=1):
+        text = page.get_text()
+        for term, suggestions in banned_dict.items():
+            pattern = re.compile(rf"\b({re.escape(term)})\b", re.IGNORECASE)
+            for match in pattern.finditer(text):
+                snippet = text[max(0, match.start() - 40): min(len(text), match.end() + 60)].replace('\n', ' ')
+                if is_exception_context(snippet, term):
+                    skipped.append({
+                        "Skipped Term": match.group(),
+                        "Page": page_number,
+                        "Context": f"...{snippet.strip()}..."
+                    })
+                    continue
+                results.append({
+                    "Banned Term": match.group(),
+                    "Page": page_number,
+                    "Context": f"...{snippet.strip()}...",
+                    "Suggested Replacement(s)": ", ".join(suggestions)
+                })
+    return results, skipped
+
 # --- File Readers ---
 def read_docx(file):
     doc = Document(file)
@@ -80,40 +153,7 @@ def read_pptx(file):
                 text_runs.append(f"[Slide {slide_num}] {shape.text}")
     return "\n".join(text_runs)
 
-def scan_pdf(file, banned_dict):
-    results = []
-    doc = fitz.open(stream=file.read(), filetype="pdf")
-    for page_number, page in enumerate(doc, start=1):
-        text = page.get_text()
-        for term, suggestions in banned_dict.items():
-            pattern = re.compile(rf"\b({re.escape(term)})\b", re.IGNORECASE)
-            for match in pattern.finditer(text):
-                snippet = text[max(0, match.start() - 40): min(len(text), match.end() + 60)].replace('\n', ' ')
-                results.append({
-                    "Banned Term": match.group(),
-                    "Page": page_number,
-                    "Context": f"...{snippet.strip()}...",
-                    "Suggested Replacement(s)": ", ".join(suggestions)
-                })
-    return results
-
-def scan_text(text, banned_dict, chars_per_page=1800):
-    results = []
-    for term, suggestions in banned_dict.items():
-        pattern = re.compile(rf"\b({re.escape(term)})\b", re.IGNORECASE)
-        for match in pattern.finditer(text):
-            start = match.start()
-            estimated_page = max(1, (start // chars_per_page) + 1)
-            snippet = text[max(0, start - 40): min(len(text), start + 60)].replace('\n', ' ')
-            results.append({
-                "Banned Term": match.group(),
-                "Page": estimated_page,
-                "Context": f"...{snippet.strip()}...",
-                "Suggested Replacement(s)": ", ".join(suggestions)
-            })
-    return results
-
-# --- Tabs for Upload and Dictionary View ---
+# --- Tabs ---
 tab1, tab2 = st.tabs(["📤 Upload Document", "📘 View Banned Terms"])
 
 with tab1:
@@ -125,24 +165,25 @@ with tab1:
 
     if uploaded_file:
         findings = []
+        skipped = []
+        raw_text = ""
         try:
             if uploaded_file.name.endswith(".pdf"):
-                findings = scan_pdf(uploaded_file, banned_terms_dict)
+                findings, skipped = scan_pdf_with_context(uploaded_file, banned_terms_dict)
             elif uploaded_file.name.endswith(".docx"):
-                text = read_docx(uploaded_file)
-                findings = scan_text(text, banned_terms_dict)
+                raw_text = read_docx(uploaded_file)
+                findings, skipped = scan_text_with_context(raw_text, banned_terms_dict)
             elif uploaded_file.name.endswith(".txt"):
-                text = read_txt(uploaded_file)
-                findings = scan_text(text, banned_terms_dict)
+                raw_text = read_txt(uploaded_file)
+                findings, skipped = scan_text_with_context(raw_text, banned_terms_dict)
             elif uploaded_file.name.endswith(".pptx"):
-                text = read_pptx(uploaded_file)
-                findings = scan_text(text, banned_terms_dict)
+                raw_text = read_pptx(uploaded_file)
+                findings, skipped = scan_text_with_context(raw_text, banned_terms_dict)
             else:
                 st.error("Unsupported file type.")
         except Exception as e:
             st.error(f"Error reading file: {e}")
 
-        # --- Display Results ---
         if findings:
             st.markdown("### 📊 Summary Statistics")
             df = pd.DataFrame(findings)
@@ -159,8 +200,24 @@ with tab1:
             st.markdown("### 🔎 Flagged Terms Table")
             st.dataframe(df, use_container_width=True)
             st.success(f"{len(df)} instance(s) of non-compliant language found.")
+
+            if raw_text:
+                for i, row in df.iterrows():
+                    raw_text = re.sub(
+                        rf"\b({re.escape(row['Banned Term'])})\b",
+                        r"**\1**",
+                        raw_text,
+                        flags=re.IGNORECASE
+                    )
+                st.markdown("### 🖍️ Highlighted Document Preview")
+                st.markdown(f"<div style='white-space: pre-wrap'>{raw_text}</div>", unsafe_allow_html=True)
+
         else:
             st.success("✅ No banned terms found in the uploaded document.")
+
+        if skipped:
+            st.markdown("### 🟡 Skipped Terms (Allowed Context)")
+            st.dataframe(pd.DataFrame(skipped), use_container_width=True)
 
 with tab2:
     st.markdown("### 🚫 Banned Terms and Suggested Replacements")
