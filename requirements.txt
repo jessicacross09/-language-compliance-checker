@@ -1,5 +1,7 @@
 streamlit
+spacy
 openai
 python-docx
-pymupdf
 python-pptx
+PyMuPDF
+pandas
