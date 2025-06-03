@@ -178,3 +178,23 @@ with tab2:
         for term, suggestions in banned_terms_dict.items()
     ])
     st.dataframe(banned_df, use_container_width=True)
+
+    # Professional explanation of skipping rules
+    st.markdown("""
+---
+### ⚖️ Explanation of Skipped Terms
+
+Some terms like **"Taiwan"** and **"national"** are *only* skipped when they appear as part of official organization names (e.g., universities, government bodies).
+
+#### ✅ Allowed (Skipped due to Organization Name)
+- *National **Taiwan** University is a top academic institution.*
+- *The **Taiwan** External Trade Development Council supports exports.*
+- *The **National** Development Council issued a new report.*
+
+#### ❌ Disallowed (Should Be Flagged)
+- *“**Taiwan** is a **country** in East Asia.”*
+- *“U.S. policy toward **Taiwan** has shifted.”*
+- *“**National** identity is central to the reform agenda.”*
+""")
+
+
