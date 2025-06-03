@@ -195,41 +195,9 @@ with tab1:
             st.error(f"Error reading file: {e}")
 
         if findings:
-            st.markdown("### \ud83d\udcca Summary Statistics")
-            df = pd.DataFrame(findings)
-            term_counts = df["Banned Term"].value_counts().reset_index()
-            term_counts.columns = ["Term", "Frequency"]
-
-            colA, colB = st.columns(2)
-            colA.metric(label="Total Banned Terms Flagged", value=len(df))
-            colB.metric(label="Unique Terms Found", value=term_counts.shape[0])
-
-            with st.expander("\ud83d\udccb Term Frequency Table"):
-                st.dataframe(term_counts, use_container_width=True)
-
-            st.markdown("### \ud83d\udd0e Flagged Terms Table")
-            st.dataframe(df, use_container_width=True)
-            st.success(f"{len(df)} instance(s) of non-compliant language found.")
-
-            if raw_text:
-                for i, row in df.iterrows():
-                    raw_text = re.sub(rf"\b({re.escape(row['Banned Term'])})\b", r"**\\1**", raw_text, flags=re.IGNORECASE)
-                st.markdown("### \ud83d\udd8d\ufe0f Highlighted Document Preview")
-                st.markdown(f"<div style='white-space: pre-wrap'>{raw_text}</div>", unsafe_allow_html=True)
-
-        else:
-            st.success("\u2705 No banned terms found in the uploaded document.")
-
-        if skipped:
-            st.markdown("### \ud83d\udeab Skipped Terms (Allowed Context)")
-            st.dataframe(pd.DataFrame(skipped), use_container_width=True)
-
-with tab2:
-    st.markdown("### \ud83d\udeab Banned Terms and Suggested Replacements")
+            st.markdown("### Banned Terms and Suggested Replacements")
     banned_df = pd.DataFrame([
         {"Banned Term": term, "Suggested Replacement(s)": ", ".join(suggestions)}
         for term, suggestions in banned_terms_dict.items()
     ])
     st.dataframe(banned_df, use_container_width=True)
-
-
