@@ -21,7 +21,7 @@ This tool scans uploaded documents for non-compliant language and provides recom
 # --- Banned Terms Dictionary ---
 banned_terms_dict = {
     "accessible": ["reachable; usable; broadly available"],
-    "activism": ["Stakeholder engagement; issue-focused participation"],
+    "activism": ["stakeholder engagement; issue-focused participation"],
     "anti-racism": ["addressing discrimination"],
     "bias": ["subjective influence"],
     "clean energy": ["energy diversification; secure energy sourcing"],
