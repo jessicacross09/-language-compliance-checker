@@ -131,6 +131,13 @@ def scan_pdf(file, banned_dict):
                 })
     return results, skipped
 
+# --- Highlighting Function ---
+def highlight_terms(text, terms):
+    for term in sorted(terms, key=len, reverse=True):  # longer terms first
+        pattern = re.compile(rf'\b({re.escape(term)})\b', flags=re.IGNORECASE)
+        text = pattern.sub(r"<mark style='background-color: yellow'>\1</mark>", text)
+    return text
+
 # --- Tabs ---
 tab1, tab2 = st.tabs(["Upload Document", "View Banned Terms"])
 
@@ -162,10 +169,9 @@ with tab1:
             st.dataframe(df)
 
             if raw_text:
-                for term in df["Banned Term"].unique():
-                    raw_text = re.sub(rf"\b({re.escape(term)})\b", r"**\1**", raw_text, flags=re.IGNORECASE)
+                highlighted_text = highlight_terms(raw_text, df["Banned Term"].unique())
                 st.markdown("### Highlighted Text Preview")
-                st.markdown(f"<div style='white-space: pre-wrap'>{raw_text}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='white-space: pre-wrap'>{highlighted_text}</div>", unsafe_allow_html=True)
 
         if skipped:
             st.markdown("### Skipped Terms (Named Entities in Organization Names)")
@@ -196,5 +202,3 @@ Some terms like **"Taiwan"** and **"national"** are *only* skipped when they app
 - *“U.S. policy toward **Taiwan** has shifted.”*
 - *“**National** identity is central to the reform agenda.”*
 """)
-
-
