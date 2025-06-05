@@ -152,13 +152,13 @@ with tab1:
                     findings, skipped, raw_text = scan_pdf(uploaded_file, banned_terms_dict)
                 elif uploaded_file.name.endswith(".docx"):
                     raw_text = read_docx(uploaded_file)
-                    findings, skipped, _ = scan_text(raw_text, banned_terms_dict)
+                    findings, skipped, raw_text = scan_text(raw_text, banned_terms_dict)
                 elif uploaded_file.name.endswith(".txt"):
                     raw_text = read_txt(uploaded_file)
-                    findings, skipped, _ = scan_text(raw_text, banned_terms_dict)
+                    findings, skipped, raw_text = scan_text(raw_text, banned_terms_dict)
                 elif uploaded_file.name.endswith(".pptx"):
                     raw_text = read_pptx(uploaded_file)
-                    findings, skipped, _ = scan_text(raw_text, banned_terms_dict)
+                    findings, skipped, raw_text = scan_text(raw_text, banned_terms_dict)
             except Exception as e:
                 st.error(f"Error reading file: {e}")
 
@@ -168,6 +168,12 @@ with tab1:
                 st.metric("Total Banned Terms Flagged", len(df))
                 st.metric("Unique Terms Found", df['Banned Term'].nunique())
                 st.dataframe(df, use_container_width=True)
+
+                # NEW: Frequency chart
+                term_counts = df['Banned Term'].value_counts().reset_index()
+                term_counts.columns = ['Term', 'Count']
+                st.subheader("\U0001F4C8 Most Frequently Flagged Terms")
+                st.bar_chart(term_counts.set_index("Term"))
 
             if raw_text:
                 with st.expander("\U0001F58D Highlighted Text Preview", expanded=False):
