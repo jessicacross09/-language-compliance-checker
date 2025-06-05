@@ -163,7 +163,7 @@ with tab1:
                 st.error(f"Error reading file: {e}")
 
         if 'findings' in locals() and findings is not None:
-            df = pd.DataFrame(findings)
+    df = pd.DataFrame(findings)
 
     with st.expander("📊 Summary Statistics", expanded=True):
         if not df.empty:
@@ -181,7 +181,7 @@ with tab1:
     if raw_text and not df.empty:
         with st.expander("🖍 Highlighted Text Preview", expanded=True):
             highlighted_text = highlight_terms(raw_text, df["Banned Term"].unique())
-            st.markdown(f"<div style='white-space: pre-wrap'>{highlighted_text}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='white-space: pre-wrap'>{highlighted_text}</div>", unsafe_allow_html=True):
             highlighted_text = highlight_terms(raw_text, df["Banned Term"].unique())
             st.markdown(f"<div style='white-space: pre-wrap'>{highlighted_text}</div>", unsafe_allow_html=True)
                     st.markdown(f"<div style='white-space: pre-wrap'>{highlighted_text}</div>", unsafe_allow_html=True)
