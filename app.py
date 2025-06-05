@@ -176,9 +176,7 @@ with tab1:
             st.subheader("📈 Most Frequently Flagged Terms")
             st.bar_chart(term_counts.set_index("Term"))
         else:
-            st.warning("No banned terms were found in the uploaded document.")
-
-    if raw_text and not df.empty:
+            st.warning("No banned terms were found in the uploaded document.")if raw_text and not df.empty:
         with st.expander("🖍 Highlighted Text Preview", expanded=True):
             highlighted_text = highlight_terms(raw_text, df["Banned Term"].unique())
             st.markdown(f"<div style='white-space: pre-wrap'>{highlighted_text}</div>", unsafe_allow_html=True):
