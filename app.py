@@ -164,7 +164,6 @@ with tab1:
 
 if 'findings' in locals() and findings is not None:
 
-            )
     df = pd.DataFrame(findings)
 
     with st.expander("📊 Summary Statistics", expanded=True):
