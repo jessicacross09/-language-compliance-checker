@@ -162,23 +162,27 @@ with tab1:
             except Exception as e:
                 st.error(f"Error reading file: {e}")
 
-        if findings:
-            df = pd.DataFrame(findings)
-            with st.expander("\U0001F4CA Summary Statistics", expanded=True):
-                st.metric("Total Banned Terms Flagged", len(df))
-                st.metric("Unique Terms Found", df['Banned Term'].nunique())
-                st.dataframe(df, use_container_width=True)
+    df = pd.DataFrame(findings)
 
-                # NEW: Frequency chart
-                term_counts = df['Banned Term'].value_counts().reset_index()
-                term_counts.columns = ['Term', 'Count']
-                st.subheader("\U0001F4C8 Most Frequently Flagged Terms")
-                st.bar_chart(term_counts.set_index("Term"))
+with st.expander("📊 Summary Statistics", expanded=True):
+    if not df.empty:
+        st.metric("Total Banned Terms Flagged", len(df))
+        st.metric("Unique Terms Found", df['Banned Term'].nunique())
+        st.dataframe(df, use_container_width=True)
 
-            if raw_text:
-                with st.expander("\U0001F58D Highlighted Text Preview", expanded=False):
-                    highlighted_text = highlight_terms(raw_text, df["Banned Term"].unique())
-                    st.markdown(f"<div style='white-space: pre-wrap'>{highlighted_text}</div>", unsafe_allow_html=True)
+        # Frequency chart
+        term_counts = df['Banned Term'].value_counts().reset_index()
+        term_counts.columns = ['Term', 'Count']
+        st.subheader("📈 Most Frequently Flagged Terms")
+        st.bar_chart(term_counts.set_index("Term"))
+    else:
+        st.warning("No banned terms were found in the uploaded document.")
+        
+# Highlighted text preview
+if raw_text and not df.empty:
+    with st.expander("🖍️ Highlighted Text Preview", expanded=True):
+        highlighted_text = highlight_terms(raw_text, df["Banned Term"].unique())
+        st.markdown(f"<div style='white-space: pre-wrap'>{highlighted_text}</div>", unsafe_allow_html=True)
 
         if skipped:
             with st.expander("\u2705 Skipped Terms (Named Entities in Organization Names)", expanded=False):
