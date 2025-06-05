@@ -94,7 +94,7 @@ def read_pptx(file):
 def scan_text(text, banned_dict, chars_per_page=1800):
     results, skipped = [], []
     for term, suggestions in banned_dict.items():
-        pattern = re.compile(rf"\\b({re.escape(term)})\\b", re.IGNORECASE)
+        pattern = re.compile(rf"(?<!\w)({re.escape(term)})(?!\w)", re.IGNORECASE)
         for match in pattern.finditer(text):
             start = match.start()
             estimated_page = max(1, (start // chars_per_page) + 1)
@@ -115,10 +115,10 @@ def scan_pdf(file, banned_dict):
     doc = fitz.open(stream=file.read(), filetype="pdf")
     all_text = ""
     for page_number, page in enumerate(doc, start=1):
-        text = page.get_text()
+        text = re.sub(r'\s+', ' ', page.get_text())
         all_text += text + "\n"
         for term, suggestions in banned_dict.items():
-            pattern = re.compile(rf"\\b({re.escape(term)})\\b", re.IGNORECASE)
+            pattern = re.compile(rf"(?<!\w)({re.escape(term)})(?!\w)", re.IGNORECASE)
             for match in pattern.finditer(text):
                 snippet = text[max(0, match.start() - 40): min(len(text), match.end() + 60)].replace('\n', ' ')
                 if term.lower() in ["national", "taiwan"] and is_named_entity(snippet, term):
