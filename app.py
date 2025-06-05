@@ -163,7 +163,7 @@ with tab1:
                 st.error(f"Error reading file: {e}")
 
         if 'findings' in locals() and findings is not None:
-    df = pd.DataFrame(findings)
+            df = pd.DataFrame(findings)
 
     with st.expander("📊 Summary Statistics", expanded=True):
         if not df.empty:
