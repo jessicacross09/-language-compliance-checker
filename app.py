@@ -162,7 +162,7 @@ with tab1:
             except Exception as e:
                 st.error(f"Error reading file: {e}")
 
-        iif 'findings' in locals() and findings is not None:
+        if 'findings' in locals() and findings is not None:
     df = pd.DataFrame(findings)
 
     with st.expander("📊 Summary Statistics", expanded=True):
