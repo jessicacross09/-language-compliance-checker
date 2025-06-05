@@ -206,7 +206,6 @@ if 'findings' in locals() and findings is not None:
             st.markdown(f"<div style='white-space: pre-wrap'>{highlighted_text}</div>", unsafe_allow_html=True)
             highlighted_text = highlight_terms(raw_text, df["Banned Term"].unique())
             st.markdown(f"<div style='white-space: pre-wrap'>{highlighted_text}</div>", unsafe_allow_html=True)
-                    st.markdown(f"<div style='white-space: pre-wrap'>{highlighted_text}</div>", unsafe_allow_html=True)
 
         if skipped:
             with st.expander("\u2705 Skipped Terms (Named Entities in Organization Names)", expanded=False):
