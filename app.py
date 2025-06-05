@@ -135,8 +135,8 @@ def scan_pdf(file, banned_dict):
 # --- Highlighting Function ---
 def highlight_terms(text, terms):
     for term in sorted(terms, key=len, reverse=True):
-        pattern = re.compile(rf'\\b({re.escape(term)})\\b', flags=re.IGNORECASE)
-        text = pattern.sub(r"<mark style='background-color: yellow'>\\1</mark>", text)
+        pattern = re.compile(rf'(?<!\w)({re.escape(term)})(?!\w)', flags=re.IGNORECASE)
+        text = pattern.sub(r"<mark style='background-color: yellow'>\1</mark>", text)
     return text
 
 # --- Tabs ---
